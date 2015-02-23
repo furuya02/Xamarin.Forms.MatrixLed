@@ -1,0 +1,61 @@
+
+int func(String str); //WebAPIの型宣
+
+int row[8]={A7,A6,A5,A4,A3,A2,A1,A0};
+int col[8]={D7,D6,D5,D4,D3,D2,D1,D0};
+
+//点灯対象の文字列データ
+String datStr="1212121211221122";
+
+void setup() {
+    
+    for(int i=0;i<8;i++){
+        //D0..D7の初期化
+        pinMode(col[i], OUTPUT); 
+        digitalWrite(col[i],1);//HIGHで初期化
+        //A0..A7の初期化
+        pinMode(row[i], OUTPUT); 
+        digitalWrite(row[i],0); //LOWで初期化
+    }
+
+    Spark.function("func", func); //WebAPIの公開
+}
+
+//公開されたAPI
+int func(String str){
+    datStr = str;
+    return 1;
+}
+
+
+void loop() {
+    for(int i=0;i<8;i++){
+        //２文字づつ切り取って、列ごと点灯する
+        disp(i,datStr.substring(i*2,i*2 + 2));
+    }
+}
+
+//文字列(２文字)を数値化する
+//"ff" -> 0xff   "1c" -> 0x1c
+int toHex(String str){
+    char c = str[0];
+    int h = ('a' <= c && c <= 'f') ? (c - 'a') + 10 : (c - '0');
+    c = str[1];
+    int l = ('a' <= c && c <= 'f') ? (c - 'a') + 10 : (c - '0');
+    return (h<<4 | l)&0xff;
+}
+
+void disp(int r,String dat){
+    int d = toHex(dat);//文字列の数値化
+    digitalWrite(row[r],0); //当該行の消灯
+    for(int c=0;c<8;c++){
+        int sw = 1;//HIGHで初期化
+        if (((d >> c) & 1)==1) {
+            sw = 0;//LOWで点灯
+        }
+        digitalWrite(col[7-c],sw);
+    }
+    digitalWrite(row[r],1); //当該行の点灯
+    delay(3);
+    digitalWrite(row[r],0); //当該行の消灯
+}
